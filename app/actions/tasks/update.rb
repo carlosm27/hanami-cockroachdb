@@ -16,21 +16,26 @@ module HanamiCockroachdb
 
 
         def handle(request, response)
-          
-          task = rom.relations[:tasks].by_pk(
-            request.params[:id]
-          ).one
-          response.format = :json
+          if request.params.valid?
+            task = rom.relations[:tasks].by_pk(
+              request.params[:id]
+            ).one
+            response.format = :json
 
-          if task
-            task = rom.relations[:tasks].by_pk(request.params[:id]).changeset(:update, request.params[:task]).commit
-            response.body = task.to_json
-            
+            if task
+              task = rom.relations[:tasks].by_pk(request.params[:id]).changeset(:update, request.params[:task]).commit
+              response.body = task.to_json
+              
+            else
+              response.status = 404
+              response.body = {error:"not_found"}.to_json
+              
+            end
           else
-            response.status = 404
-            response.body = {error:"not_found"}.to_json
-            
-          end  
+            response.status = 422
+            response.format = :json
+            response.body = request.params.errors.to_json
+          end       
         end
       end
     end
